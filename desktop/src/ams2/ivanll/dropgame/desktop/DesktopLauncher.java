@@ -2,7 +2,8 @@ package ams2.ivanll.dropgame.desktop;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import ams2.ivanll.dropgame.DropGame;
+
+import ams2.ivanll.dropgame.Drop;
 
 public class DesktopLauncher {
 
@@ -11,7 +12,7 @@ public class DesktopLauncher {
 		config.title = "Drop";
 		config.width = 800;
 		config.height = 480;
-		new LwjglApplication(new DropGame(), config);
+		new LwjglApplication(new Drop(), config);
 	}
 
 }
