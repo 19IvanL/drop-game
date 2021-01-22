@@ -18,7 +18,7 @@ import java.util.Iterator;
 
 public class GameScreen implements Screen {
 
-    final Drop game;
+    final Drop drop;
 
     Texture dropImage;
     Texture bucketImage;
@@ -27,11 +27,13 @@ public class GameScreen implements Screen {
     OrthographicCamera camera;
     Rectangle bucket;
     Array<Rectangle> raindrops;
+
+    boolean gameOver = false;
     long lastDropTime;
     int dropsGathered;
 
-    public GameScreen(final Drop game) {
-        this.game = game;
+    public GameScreen(final Drop drop) {
+        this.drop = drop;
 
         // load the images for the droplet and the bucket, 64x64 pixels each
         dropImage = new Texture(Gdx.files.internal("water-drop.png"));
@@ -84,17 +86,17 @@ public class GameScreen implements Screen {
 
         // tell the SpriteBatch to render in the
         // coordinate system specified by the camera.
-        game.batch.setProjectionMatrix(camera.combined);
+        drop.batch.setProjectionMatrix(camera.combined);
 
         // begin a new batch and draw the bucket and
         // all drops
-        game.batch.begin();
-        game.font.draw(game.batch, "Drops Collected: " + dropsGathered, 0, 480);
-        game.batch.draw(bucketImage, bucket.x, bucket.y, bucket.width, bucket.height);
+        drop.batch.begin();
+        drop.font.draw(drop.batch, "Drops Collected: " + dropsGathered, 0, 480);
+        drop.batch.draw(bucketImage, bucket.x, bucket.y, bucket.width, bucket.height);
         for (Rectangle raindrop : raindrops) {
-            game.batch.draw(dropImage, raindrop.x, raindrop.y);
+            drop.batch.draw(dropImage, raindrop.x, raindrop.y);
         }
-        game.batch.end();
+        drop.batch.end();
 
         // process user input
         if (Gdx.input.isTouched()) {
@@ -114,8 +116,8 @@ public class GameScreen implements Screen {
         if (bucket.x > 800 - 64)
             bucket.x = 800 - 64;
 
-        // check if we need to create a new raindrop
-        if (TimeUtils.nanoTime() - lastDropTime > 1000000000)
+        // Check if we need to create a new raindrop
+        if ((TimeUtils.nanoTime() - lastDropTime > 1000000000) && !gameOver)
             spawnRaindrop();
 
         // move the raindrops, remove any that are beneath the bottom edge of
@@ -125,8 +127,18 @@ public class GameScreen implements Screen {
         while (iter.hasNext()) {
             Rectangle raindrop = iter.next();
             raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-            if (raindrop.y + 64 < 0)
-                iter.remove();
+
+            // Game over state
+            if (raindrop.y + 64 < 0) {
+                raindrops.clear();
+                rainMusic.stop();
+                gameOver = true;
+                drop.gameOverSound.play();
+                drop.setScreen(new GameOverScreen(drop));
+                dispose();
+            }
+
+            // If the bucket grabs the raindrop
             if (raindrop.overlaps(bucket)) {
                 dropsGathered++;
                 dropSound.play();
@@ -147,17 +159,13 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void hide() {
-        System.out.println();
-    }
+    public void hide() {}
 
     @Override
-    public void pause() {
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-    }
+    public void resume() {}
 
     @Override
     public void dispose() {
