@@ -139,7 +139,7 @@ public class GameScreen implements Screen {
             }
 
             // If the bucket grabs the raindrop
-            if (raindrop.overlaps(bucket)) {
+            if (raindrop.overlaps(bucket) && raindrop.y > bucket.y) {
                 dropsGathered++;
                 dropSound.play();
                 iter.remove();
