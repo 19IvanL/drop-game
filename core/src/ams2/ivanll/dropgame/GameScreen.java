@@ -12,7 +12,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.TimeUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +25,9 @@ public class GameScreen implements Screen {
     final Drop drop;
 
     long timeStart;
-    long time;
+    long timeSongStarts;
+    long timeDropSpawns;
+    long dropFallMargin = 2000;
 
     Beat[] beats;
     float mean;
@@ -41,7 +42,7 @@ public class GameScreen implements Screen {
     Array<Rectangle> raindrops;
 
     boolean gameOver = false;
-    long lastDropTime;
+    long lastDropTime = 0;
     int dropsGathered;
 
     public GameScreen(final Drop drop) {
@@ -49,8 +50,7 @@ public class GameScreen implements Screen {
 
         // Song BPM identification
         // TODO Impossible to implement lwbd's Beat Detector in real time in an Android system. Next solution? Generate and store the music data into a readable file externally and then add it to the game.
-        // InputStream audioRealFile = Gdx.files.internal("technology.mp3").read();
-        InputStream beatsFile = Gdx.files.internal("songs/technology/technology.mp3.sngtrck").read();
+        InputStream beatsFile = Gdx.files.internal("songs/maniac/maniac.mp3.sngtrck").read();
         try {
             ObjectInputStream ois = new ObjectInputStream(beatsFile);
             beats = (Beat[])ois.readObject();
@@ -62,7 +62,10 @@ public class GameScreen implements Screen {
             e.printStackTrace();
         }
 
+        Beat firstNote = getFirstNote(beats);
+
         timeStart = System.currentTimeMillis();
+        timeSongStarts = timeStart + firstNote.timeMs - dropFallMargin;
 
         // load the images for the droplet and the bucket, 64x64 pixels each
         dropImage = new Texture(Gdx.files.internal("water-drop.png"));
@@ -70,7 +73,7 @@ public class GameScreen implements Screen {
 
         // load the drop sound effect and the rain background "music"
         dropSound = Gdx.audio.newSound(Gdx.files.internal("water-drop.mp3"));
-        mainMusic = Gdx.audio.newMusic(Gdx.files.internal("songs/technology/technology.mp3"));
+        mainMusic = Gdx.audio.newMusic(Gdx.files.internal("songs/maniac/maniac.mp3"));
         mainMusic.setLooping(true);
 
         // create the camera and the SpriteBatch
@@ -98,11 +101,16 @@ public class GameScreen implements Screen {
         raindrop.width = 64;
         raindrop.height = 64;
         raindrops.add(raindrop);
-        lastDropTime = TimeUtils.nanoTime();
+        if (lastDropTime == 0) {
+            lastDropTime = System.currentTimeMillis();
+        }
     }
 
     @Override
     public void render(float delta) {
+        if (System.currentTimeMillis() >= timeSongStarts)
+            mainMusic.play();
+
         // clear the screen with a dark blue color. The
         // arguments to glClearColor are the red, green
         // blue and alpha component in the range [0,1]
@@ -146,11 +154,9 @@ public class GameScreen implements Screen {
             bucket.x = 800 - 64;
 
         // Check if we need to create a new raindrop
-        time = System.currentTimeMillis() - timeStart;
-        System.out.println("Time: " + time + "\n" +
-                "Beat time:" + beats[beatsIterator].timeMs);
-        if (time >= beats[beatsIterator].timeMs) {
-            if (beats[beatsIterator].energy >= (mean + 0.20))
+        timeDropSpawns = System.currentTimeMillis() - beats[beatsIterator].timeMs;
+        if (System.currentTimeMillis() >= timeSongStarts + beats[beatsIterator].timeMs - dropFallMargin) {
+            if (beats[beatsIterator].energy >= (mean * 2))
                 spawnRaindrop();
             beatsIterator++;
         }
@@ -165,12 +171,12 @@ public class GameScreen implements Screen {
 
             // Game over state
             if (raindrop.y + 64 < 0) {
-                raindrops.clear();
-                mainMusic.stop();
-                gameOver = true;
-                drop.gameOverSound.play();
-                drop.setScreen(new GameOverScreen(drop));
-                dispose();
+                // raindrops.clear();
+                // mainMusic.stop();
+                // gameOver = true;
+                // drop.gameOverSound.play();
+                // drop.setScreen(new GameOverScreen(drop));
+                // dispose();
             }
 
             // If the bucket grabs the raindrop
@@ -178,8 +184,16 @@ public class GameScreen implements Screen {
                 dropsGathered++;
                 dropSound.play();
                 iter.remove();
+                System.out.println(System.currentTimeMillis() - lastDropTime);
             }
         }
+    }
+
+    private Beat getFirstNote(Beat[] beats) {
+        for (Beat beat : beats)
+            if (beat.energy >= (mean * 2))
+                return beat;
+        return null;
     }
 
     @Override
@@ -187,11 +201,7 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void show() {
-        // start the playback of the background music
-        // when the screen is shown
-        mainMusic.play();
-    }
+    public void show() {}
 
     @Override
     public void hide() {}
