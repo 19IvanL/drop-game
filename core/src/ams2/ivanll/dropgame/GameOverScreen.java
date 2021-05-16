@@ -11,27 +11,24 @@ public class GameOverScreen implements Screen {
     final Drop drop;
 
     OrthographicCamera camera;
-    Texture imposter;
-    TextureRegion mainBackground;
+    TextureRegion background;
 
     public GameOverScreen(final Drop drop) {
         this.drop = drop;
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 800, 480);
-        imposter = new Texture(Gdx.files.internal("imposter.jpeg"));
-        mainBackground = new TextureRegion(imposter, 0, 0, 320, 180);
+        Texture backgroundImage = new Texture(Gdx.files.internal("background-game-over.jpg"));
+        background = new TextureRegion(backgroundImage, 0, 0, 640, 359);
     }
 
     @Override
-    public void show() {
-
-    }
+    public void show() {}
 
     @Override
     public void render(float delta) {
         drop.batch.begin();
-        drop.batch.draw(mainBackground, 0, 0, 800, 480);
-        drop.font.draw(drop.batch, "Game over :( ", 100, 150);
+        drop.batch.draw(background, 0, 0, 800, 480);
+        drop.font.draw(drop.batch, "Game over :(", 100, 150);
         drop.font.draw(drop.batch, "Tap anywhere to try again!", 100, 100);
         drop.batch.end();
 
@@ -42,28 +39,18 @@ public class GameOverScreen implements Screen {
     }
 
     @Override
-    public void resize(int width, int height) {
-
-    }
+    public void resize(int width, int height) {}
 
     @Override
-    public void pause() {
-
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-
-    }
+    public void resume() {}
 
     @Override
-    public void hide() {
-
-    }
+    public void hide() {}
 
     @Override
-    public void dispose() {
-
-    }
+    public void dispose() {}
 
 }
